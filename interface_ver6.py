@@ -28,9 +28,9 @@ from dash.dependencies import Input, Output, MATCH
 
 
 # loading files
-image_directory = '/Users/thea/Desktop/Speciale/Holocaust_images'  
-csv_file = '/Users/thea/Desktop/Speciale/detected_objects_full.csv'  
-df_metadata = pd.read_csv('/Users/thea/Desktop/Speciale/full_metadata_geocoded.csv')
+image_directory = './Holocaust_images'  
+csv_file = './detected_objects_full.csv'  
+df_metadata = pd.read_csv('./full_metadata_geocoded.csv')
 
 
 
@@ -41,7 +41,7 @@ df_sorted = df_bb.sort_values(['Photograph Number', 'Score'], ascending=[True, F
 df_top5 = df_sorted.groupby('Photograph Number').head(10)
 
 # map data
-df_map = pd.read_csv('/Users/thea/Desktop/Speciale/full_metadata_geocoded.csv')  
+df_map = pd.read_csv('./full_metadata_geocoded.csv')  
 df_map['latitude'] = pd.to_numeric(df_map['latitude'], errors='coerce')
 df_map['longitude'] = pd.to_numeric(df_map['longitude'], errors='coerce')
 df_map_droprows = df_map.dropna(subset=['latitude', 'longitude'])
@@ -123,7 +123,7 @@ def encode_image_for_plotly(image_filename):
         found = False
         for ext in valid_extensions:
             modified_filename = f"{image_filename}{ext}"
-            image_path = os.path.join(image_directory, modified_filename)
+            image_path = modified_filename
             if os.path.isfile(image_path):
                 image_filename = modified_filename
                 found = True
@@ -133,7 +133,7 @@ def encode_image_for_plotly(image_filename):
             return None
     
     else:
-        image_path = os.path.join(image_directory, image_filename)
+        image_path = image_filename
     mime_types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png'}
     file_ext = os.path.splitext(image_filename.lower())[1]
     mime_type = mime_types.get(file_ext, 'application/octet-stream')
@@ -151,7 +151,7 @@ def encode_image_for_plotly(image_filename):
 
 ############## IMAGE DISPLAY 
 
-detected_image_directory = '/Users/thea/Desktop/Speciale/detected_images_new_new'
+detected_image_directory = './detected_images_new_new'
 
 def create_figure(image_filename, with_bboxes=False):
     extension = '.jpg'  # nok her problemet med png stammer fra ?
@@ -188,7 +188,7 @@ def create_figure(image_filename, with_bboxes=False):
     return fig
 
 ################## WORDCLOUD SECTION 
-df_objects = pd.read_csv('/Users/thea/Desktop/Speciale/detected_objects_full.csv')
+df_objects = pd.read_csv('./detected_objects_full.csv')
 
 
 def create_object_list(df):
@@ -246,7 +246,7 @@ def create_gallery(image_filenames): # look into changing the thumbnails in the 
             id={'type': 'dynamic-img', 'filename': img},  
             style={'width': '100px', 'height': '100px', 'padding': '5px', 'cursor': 'pointer'},
             n_clicks=0
-        ) for img in image_filenames if encode_image_for_plotly(img) is not None
+        ) for img in image_filenames if encode_image_for_plotly(os.path.join(image_directory, img)) is not None
     ], style={'width': '70%', 'height': '50vh', 'overflowY': 'auto', 'flex': '1', 'padding-left': '35px', 'padding-top': '20px'})
 
 initial_images = random.sample(image_filenames, min(len(image_filenames), max_images_to_display))
@@ -383,7 +383,7 @@ app.layout = html.Div([
                 dcc.Store(id='bbox-toggle', data={'show_bbox': False}),
                 html.Button('Show Detected Objects', id='toggle-bbox-button', n_clicks=0)
             ], style={'flex': '2', 'margin-bottom': '10px', 'text-align': 'right'}),
-        ], style={'display': 'flex', 'width': '100%'}),
+        ], className="headerLine"),
         html.Div(id='clicked-info', style={'color': 'black', 'margin-top': '10px', 'margin-left': '30px', 'font-size': '16px', 'font-family': 'helvetica neue'}),
         
         # Gallery and Big Image Display
@@ -391,7 +391,7 @@ app.layout = html.Div([
             html.Div(id='gallery', children=gallery_children, style={'flex': '1', 'padding': '10px', 'maxWidth': '350px', 'margin-bottom': '20px'}),
             html.Div(id='big-image-display', children=big_image_display_children, style={'flex': '2', 'padding': '10px'}),
             
-        ], style={'display': 'flex', 'width': '100%', 'maxHeight': '350px', 'margin': '20px'}),
+        ], className="galleryLine"),
 
         html.Div([
             html.Div([
@@ -432,9 +432,9 @@ app.layout = html.Div([
                 html.P('Year: [Year]'),
                 html.P('Title: [Title]'),
                 html.P('Location: [Location]'),
-            ], id='infobox', style={'width': '33%', 'padding': '10px',  'height': '270px', 'margin-left': '20px', 'margin-right': '40px', 'overflow-y': 'auto', 'font-family': 'helvetica neue'}),
-        ], style={'display': 'flex', 'width': '100%', 'padding-top': '60px', 'margin': '20px'}),
-    ], style={'display': 'flex', 'flexDirection': 'column', 'flex': '1', 'padding-left': '20px'})
+            ], id='infobox', style={'overflow-y': 'auto', 'font-family': 'helvetica neue'}),
+        ], className="wordCloudLine"),
+    ], className="mainWrapper")
 ])
 
 
@@ -536,6 +536,7 @@ def update_gallery(selected_artist, selected_location, selected_material, select
         selected_word = word_click[0] if isinstance(word_click, list) and word_click else word_click
         word_clicked_message = f"You clicked on the object {selected_word}"
         filtered_df = df_bb[df_bb['Detected Objects'].str.contains(selected_word, case=False, na=False)]
+        print("Selected Word:", selected_word, filtered_df.size)
         
     elif trigger_id and 'marker' in trigger_id:
         marker_id = json.loads(trigger_id.split('.')[0])
